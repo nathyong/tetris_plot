@@ -2,7 +2,7 @@
 
 echo '"time", "achieved"' > output.csv
 
-if [[ -z "$1" ]]
+if [[ -z "$1" ]] || (!([[ -d "$1" ]]))
 then
     echo "Usage: tetris_plot [path to NullpoMino replay folder]"
     exit 1
