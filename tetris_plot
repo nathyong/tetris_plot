@@ -1,0 +1,23 @@
+#!/bin/bash
+
+echo '"time", "achieved"' > output.csv
+
+if [[ -z "$1" ]]
+then
+    echo "Usage: tetris_plot [path to NullpoMino replay folder]"
+    exit 1
+fi
+
+INPUT="$1"
+
+for f in "$INPUT"/*;
+do
+    grep -qo "linerace" "$f" && grep -qo "result.totallines=40" "$f" || continue
+    TIME=$(grep "result.time" "$f" | grep -Eo "[[:digit:]]+$")
+    DATE=$(grep "timestamp.date" "$f" | grep -Eo "[[:digit:]].+$")
+    MINUTES=$(grep "timestamp.time" "$f" | grep -Eo "[[:digit:]].+$" \
+        | sed -r 's/\\//g')
+    [[ "$TIME" ]] && echo "$TIME, $DATE $MINUTES" >> output.csv
+done
+
+R --slave --file=analyse.r
