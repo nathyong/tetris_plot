@@ -13,6 +13,8 @@ INPUT="$1"
 for f in "$INPUT"/*;
 do
     grep -qo "linerace" "$f" && grep -qo "result.totallines=40" "$f" || continue
+    grep -q "linerace\.big.*true" "$f" && continue
+    echo "Processing file $f"
     TIME=$(grep "result.time" "$f" | grep -Eo "[[:digit:]]+$")
     DATE=$(grep "timestamp.date" "$f" | grep -Eo "[[:digit:]].+$")
     MINUTES=$(grep "timestamp.time" "$f" | grep -Eo "[[:digit:]].+$" \
