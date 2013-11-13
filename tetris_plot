@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo '"time", "achieved"' > output.csv
+echo '"time", "ppm", "finesse", "achieved"' > output.csv
 
 if [[ -z "$1" ]] || (!([[ -d "$1" ]]))
 then
@@ -12,14 +12,16 @@ INPUT="$1"
 
 for f in "$INPUT"/*;
 do
-    grep -qo "linerace" "$f" && grep -qo "result.totallines=40" "$f" || continue
+    grep -q "linerace" "$f" && grep -Eq "result.totallines=4[[:digit:]]" "$f" || continue
     grep -q "linerace\.big.*true" "$f" && continue
     echo "Processing file $f"
     TIME=$(grep "result.time" "$f" | grep -Eo "[[:digit:]]+$")
     DATE=$(grep "timestamp.date" "$f" | grep -Eo "[[:digit:]].+$")
     MINUTES=$(grep "timestamp.time" "$f" | grep -Eo "[[:digit:]].+$" \
         | sed -r 's/\\//g')
-    [[ "$TIME" ]] && echo "$TIME, $DATE $MINUTES" >> output.csv
+    FINESSE=$(grep -o "statistics.finesse.*" "$f" | grep -Eo "[[:digit:]]+$")
+    PPM=$(grep -o "statistics.ppm.*" "$f" | grep -Eo "[[:digit:]].+$")
+    [[ "$TIME" ]] && echo "$TIME, $PPM, $FINESSE, $DATE $MINUTES" >> output.csv
 done
 
 R --slave --file=analyse.r
