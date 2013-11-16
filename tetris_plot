@@ -1,6 +1,7 @@
 #!/bin/bash
 
-echo '"time", "ppm", "finesse", "achieved"' > output.csv
+echo '"time", "ppm", "finesse", "achieved"' > linerace.csv
+echo '"time", "ppm", "score", "spm", "achieved"' > digchallenge.csv
 
 if [[ -z "$1" ]] || (!([[ -d "$1" ]]))
 then
@@ -12,16 +13,31 @@ INPUT="$1"
 
 for f in "$INPUT"/*;
 do
-    grep -q "linerace" "$f" && grep -Eq "result.totallines=4[[:digit:]]" "$f" || continue
-    grep -q "linerace\.big.*true" "$f" && continue
-    echo "Processing file $f"
-    TIME=$(grep "result.time" "$f" | grep -Eo "[[:digit:]]+$")
-    DATE=$(grep "timestamp.date" "$f" | grep -Eo "[[:digit:]].+$")
-    MINUTES=$(grep "timestamp.time" "$f" | grep -Eo "[[:digit:]].+$" \
-        | sed -r 's/\\//g')
-    FINESSE=$(grep -o "statistics.finesse.*" "$f" | grep -Eo "[[:digit:]]+$")
-    PPM=$(grep -o "statistics.ppm.*" "$f" | grep -Eo "[[:digit:]].+$")
-    [[ "$TIME" ]] && echo "$TIME, $PPM, $FINESSE, $DATE $MINUTES" >> output.csv
+    grep -q "big.*true" "$f" && continue
+    if (grep -q "linerace" $f && grep -Eq "result.totallines=4[[:digit:]]" "$f")
+    then
+        echo "Processing linerace replay $f"
+        TIME=$(grep "result.time" "$f" | grep -Eo "[[:digit:]]+$")
+        DATE=$(grep "timestamp.date" "$f" | grep -Eo "[[:digit:]].+$")
+        MINUTES=$(grep "timestamp.time" "$f" | grep -Eo "[[:digit:]].+$" \
+            | sed -r 's/\\//g')
+        FINESSE=$(grep -o "statistics.finesse.*" "$f" | grep -Eo "[[:digit:]]+$")
+        PPM=$(grep -o "statistics.ppm.*" "$f" | grep -Eo "[[:digit:]].+$")
+        [[ "$TIME" ]] && echo "$TIME, $PPM, $FINESSE, $DATE $MINUTES" >> linerace.csv
+    fi
+
+    if grep -q "digchallenge" "$f"
+    then
+        echo "Processing digchallenge replay $f"
+        TIME=$(grep "statistics.time" "$f" | grep -Eo "[[:digit:]]+$")
+        DATE=$(grep "timestamp.date" "$f" | grep -Eo "[[:digit:]].+$")
+        MINUTES=$(grep "timestamp.time" "$f" | grep -Eo "[[:digit:]].+$" \
+            | sed -r 's/\\//g')
+        SCORE=$(grep "result.score" "$f" | grep -Eo "[[:digit:]].+")
+        SPM=$(grep -o "statistics.spm.*" "$f" | grep -Eo "[[:digit:]].+$")
+        PPM=$(grep -o "statistics.ppm.*" "$f" | grep -Eo "[[:digit:]].+$")
+        [[ "$TIME" ]] && [[ "$SCORE" ]] && echo "$TIME, $PPM, $SCORE, $SPM, $DATE $MINUTES" >> digchallenge.csv
+    fi
 done
 
 R --slave --file=analyse.r
